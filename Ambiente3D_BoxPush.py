@@ -282,6 +282,13 @@ def desenhar_caixa(x, y, z):
     glMaterialf(GL_FRONT_AND_BACK, GL_SHININESS, 32.0)
     
     desenhar_cubo_unitario()
+    
+    # RESETAR MATERIAL PARA CORES PADRÃO (CINZA DAS PAREDES)
+    glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, (0.35, 0.35, 0.37, 1.0))
+    glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, (0.35, 0.35, 0.37, 1.0))
+    glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, (0.1, 0.1, 0.1, 1.0))
+    glMaterialf(GL_FRONT_AND_BACK, GL_SHININESS, 8.0)
+    
     glPopMatrix()
 
 def desenhar_player_casco():
@@ -310,7 +317,8 @@ def desenhar_cena():
 def draw_text_2d(x, y, text, size=18):
     # usa projeção ortográfica no tamanho da tela
     glMatrixMode(GL_PROJECTION)
-    glPushMatrix()
+    glPushMatrix()    
+    
     glLoadIdentity()
     gluOrtho2D(0, LARGURA_TELA, 0, ALTURA_TELA)
     glMatrixMode(GL_MODELVIEW)
