@@ -1,4 +1,4 @@
-# 🎮 BoxPush 3D - Sokoban Game (Refatorado)
+# 🎮 BoxPush 3D - Sokoban Game
 
 Um jogo Sokoban 3D desenvolvido com **Pygame + PyOpenGL** utilizando **arquitetura modular** e **boas práticas de programação**.
 
@@ -256,3 +256,4 @@ Desenvolvido como projeto acadêmico para a disciplina de Computação Gráfica 
 **🎮 Divirta-se jogando BoxPush 3D!**
 
 Para dúvidas ou sugestões, abra uma issue no GitHub.
+
