@@ -21,6 +21,7 @@ Ambiente3D---BoxPush/
 │   ├── materials.py           # Materiais PBR e iluminação 3-pontos
 │   ├── primitives.py          # Formas 3D + Display Lists otimizadas
 │   ├── renderer.py            # Pipeline de renderização completa
+│   ├── clouds.py              # Sistema de nuvens procedurais animadas
 │   └── ui.py                  # HUD, menus e interface
 │
 ├── game/                      # 🎯 Lógica do Jogo
@@ -31,7 +32,8 @@ Ambiente3D---BoxPush/
 │   └── physics.py             # Sistema de física e colisões
 │
 └── utils/                     # 🔧 Utilitários
-    └── __init__.py
+    ├── __init__.py
+    └── sound.py               # Sistema de áudio procedimental (Singleton)
 ```
 
 ## 🌟 Características Principais
@@ -50,8 +52,19 @@ Ambiente3D---BoxPush/
 - **Materiais PBR-like**: Paredes, caixas e chão com materiais realistas
 - **3200+ folhas de grama**: Renderizadas dinamicamente
 - **Sistema de partículas**: Efeitos visuais ao completar objetivos
+- **Nuvens procedurais animadas**: 15 nuvens com movimento senoidal em 360°
+- **Billboard rendering**: Nuvens sempre de frente para a câmera
 - **Crosshair dinâmica**: Orientação visual
 - **Sombras projetadas**: Profundidade e realismo
+
+### 🎵 Sistema de Áudio Completo
+- **Síntese procedimental**: Todos os sons gerados por código (sem arquivos WAV)
+- **7 efeitos sonoros**: Push, blocked, box_on_target, victory, footsteps, etc.
+- **6 músicas 8-bit**: 5 trilhas de nível + 1 tema de menu (estilo Mario clássico)
+- **ADSR envelope**: Ataque/decay/sustain/release para qualidade profissional
+- **Controles independentes**: M (música) e N (efeitos sonoros)
+- **Padrão Singleton**: Gerenciador único de áudio
+- **HUD de status**: Indicadores visuais de música/sons ON/OFF
 
 ### 🎮 Jogabilidade
 - **5 níveis progressivos**: Do tutorial ao desafio final
@@ -77,7 +90,7 @@ Python 3.8 ou superior
 ### Instalação das Dependências
 ```bash
 # No diretório do projeto
-pip install pygame PyOpenGL PyOpenGL_accelerate
+pip install pygame PyOpenGL PyOpenGL_accelerate numpy
 ```
 
 ### Executar o Jogo
@@ -95,6 +108,8 @@ python main.py
 | Olhar | `Mouse` |
 | Empurrar Caixa | `ESPAÇO` |
 | Reiniciar Nível | `R` |
+| **Música ON/OFF** | `M` 🎵 |
+| **Sons ON/OFF** | `N` 🔊 |
 | **Teleporte de Emergência** | `T` ⚡ |
 | Avançar/Iniciar | `ENTER` |
 | Sair | `ESC` |
@@ -133,6 +148,24 @@ Interface do usuário:
 - Menus (principal, vitória, final)
 - Crosshair
 - Texto 2D
+- Indicadores de áudio
+
+### `graphics/clouds.py`
+Sistema de nuvens procedurais:
+- Billboard rendering (sempre de frente para câmera)
+- Textura procedimental com gradiente radial + ruído
+- Movimento senoidal orgânico (X + Z)
+- Distribuição 360° em anel
+- Alpha blending para transparência
+
+### `utils/sound.py`
+Sistema de áudio completo:
+- Síntese procedimental (ondas senoidais + quadradas)
+- ADSR envelope para qualidade profissional
+- Padrão Singleton (instância única)
+- 7 efeitos sonoros + 6 músicas 8-bit
+- Controles independentes (música/SFX)
+- Buffer management para evitar garbage collection
 
 ### `game/levels_data.py`
 Definição dos 5 níveis:
@@ -207,11 +240,14 @@ Ponto de entrada e loop principal:
 
 ## 📊 Estatísticas do Projeto
 
-- **Linhas de Código**: ~2000+ linhas
-- **Módulos**: 12 arquivos Python
-- **Funções**: 80+ funções
-- **Classes**: 8 classes
+- **Linhas de Código**: ~3000+ linhas
+- **Módulos**: 14 arquivos Python
+- **Funções**: 100+ funções
+- **Classes**: 12 classes
 - **Níveis**: 5 níveis completos
+- **Efeitos Sonoros**: 7 sons procedurais
+- **Músicas**: 6 trilhas 8-bit
+- **Nuvens**: 15 nuvens animadas
 - **Performance**: 120 FPS estáveis
 
 ## 🎯 Níveis Disponíveis

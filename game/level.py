@@ -3,10 +3,36 @@ game/level.py
 =============
 Gerenciamento de níveis do jogo.
 Carrega, valida e manipula dados dos níveis.
+
+RESPONSABILIDADES:
+-----------------
+1. Carregamento de dados de níveis (levels_data.py)
+2. Validação de spawn points e geometria
+3. Lógica de empurrar caixas (push mechanics)
+4. Detecção de colisões caixa-parede e caixa-caixa
+5. Verificação de condições de vitória
+6. Sistema de partículas para feedback visual
+7. Estatísticas (movimentos, caixas no objetivo)
+
+MECÂNICA DE EMPURRAR:
+--------------------
+- Verifica posição do jogador e direção olhada
+- Calcula posição da caixa na frente
+- Valida se destino está livre (sem paredes/caixas)
+- Verifica limites do mundo
+- Atualiza estado e dispara efeitos sonoros/visuais
+
+SISTEMA DE GRID:
+---------------
+- Posições discretas (inteiros) para lógica
+- Posições contínuas (floats) para renderização
+- Conversão através de Physics.grid_round()
 """
 
 from .levels_data import LEVELS, get_level, get_level_count
 from .physics import Physics
+from utils.sound import get_sound_manager
+from graphics.clouds import CloudSystem
 
 
 class Level:
@@ -21,6 +47,7 @@ class Level:
         self.spawn_position = (0.0, 0.0, 0.0)
         self.move_count = 0
         self.particles = []  # Lista de (x, y, z, start_time)
+        self.clouds = None  # Sistema de nuvens
         
         # Dados do nível atual
         self.level_name = ""
@@ -49,22 +76,19 @@ class Level:
         self.objectives = level_data['objetivos'][:]
         self.spawn_position = level_data['spawn']
         
-        # VALIDAÇÃO: Verifica se spawn não está dentro de parede
+        # Validação: Verifica se spawn não está dentro de parede
         spawn_grid = (
             int(round(self.spawn_position[0])),
             int(round(self.spawn_position[1])),
             int(round(self.spawn_position[2]))
         )
         if spawn_grid in self.walls:
-            print(f"⚠️ AVISO: Spawn {self.spawn_position} colide com parede {spawn_grid}!")
-            print(f"   Ajustando spawn automaticamente...")
-            # Move spawn 2 unidades para frente (direção +Z)
+            # Ajusta spawn automaticamente movendo 2 unidades para frente
             self.spawn_position = (
                 self.spawn_position[0],
                 self.spawn_position[1],
                 self.spawn_position[2] + 2.0
             )
-            print(f"   Novo spawn: {self.spawn_position}")
         
         # Metadados
         self.level_name = level_data.get('name', f'Nível {level_index + 1}')
@@ -73,6 +97,11 @@ class Level:
         # Reseta estado
         self.move_count = 0
         self.particles = []
+        
+        # Inicializa sistema de nuvens (distribuídas em 360°)
+        if self.clouds:
+            self.clouds.cleanup()  # Limpa nuvens antigas
+        self.clouds = CloudSystem(num_clouds=15, wind_speed=0.8)
         
         return True
     
@@ -157,6 +186,8 @@ class Level:
         )
         
         if not can_push:
+            # Som de bloqueio
+            get_sound_manager().play('blocked')
             return False
         
         # Move a caixa
@@ -164,9 +195,13 @@ class Level:
         self.boxes[idx] = dest_pos
         self.move_count += 1
         
-        # Cria partículas se atingiu objetivo
+        # Som de empurrar
+        get_sound_manager().play('push')
+        
+        # Cria partículas e som se atingiu objetivo
         if dest_pos in self.objectives:
             self.particles.append((dest_pos[0], dest_pos[1], dest_pos[2], current_time))
+            get_sound_manager().play('box_on_target')
         
         return True
     

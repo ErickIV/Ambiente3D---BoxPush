@@ -4,18 +4,37 @@ main.py
 BoxPush 3D - Jogo Sokoban em 3D
 Ponto de entrada principal do jogo.
 
+ARQUITETURA DO PROJETO:
+-----------------------
+- main.py: Loop principal, gerenciamento de estados e eventos
+- game/: Lógica do jogo (níveis, física, jogador)
+- graphics/: Sistema de renderização 3D (OpenGL)
+- utils/: Utilitários (sistema de som procedural)
+- config.py: Constantes e configurações
+
+PADRÕES DE PROJETO UTILIZADOS:
+------------------------------
+- MVC (Model-View-Controller): Separação entre lógica e renderização
+- Singleton: Gerenciador de som com instância única
+- State Pattern: Estados do jogo (menu, jogando, vitória)
+
+TECNOLOGIAS:
+-----------
+- Pygame: Janela, eventos e áudio
+- PyOpenGL: Renderização 3D com pipeline OpenGL
+- NumPy: Geração procedural de sons
+
 Controles:
 - WASD: Movimento
 - SHIFT: Correr
 - Mouse: Olhar ao redor
 - ESPAÇO: Empurrar caixa
 - R: Reiniciar nível
-- T: Teleporte de emergência (caso fique preso)
+- M: Música ON/OFF
+- N: Sons ON/OFF
+- T: Teleporte de emergência
 - ESC: Sair/Menu
 - ENTER: Avançar nível/Iniciar
-
-Desenvolvido com Pygame + PyOpenGL
-Arquitetura modular e profissional
 """
 
 import sys
@@ -29,6 +48,7 @@ from graphics.renderer import Renderer
 from game.player import Player
 from game.level import Level
 from game.levels_data import get_level_count
+from utils.sound import get_sound_manager
 
 
 class GameState:
@@ -74,6 +94,9 @@ class Game:
         pygame.init()
         glutInit(sys.argv)
         
+        # Inicializa sistema de som
+        self.sound = get_sound_manager()
+        
         # Cria janela
         self.window_width = WINDOW_WIDTH
         self.window_height = WINDOW_HEIGHT
@@ -98,6 +121,9 @@ class Game:
         # Mouse
         pygame.event.set_grab(False)
         pygame.mouse.set_visible(True)
+        
+        # Inicia música do menu
+        self.sound.play_music('menu', is_menu=True)
     
     def handle_events(self):
         """Processa eventos do Pygame"""
@@ -115,21 +141,33 @@ class Game:
                     self.level.reload_current_level()
                     self.player.set_position(*self.level.spawn_position)
                     self.player.reset_camera()
+                    # Reinicia música da fase atual
+                    self.sound.play_music(self.level.current_level_index)
                 
                 # T: Teleporte de emergência (caso fique preso na parede)
                 elif event.key == K_t and self.game_state.is_playing():
-                    print("🚨 Teleporte de emergência ativado!")
                     self.player.set_position(*self.level.spawn_position)
                     self.player.reset_camera()
                 
+                # M: Toggle música de fundo
+                elif event.key == K_m:
+                    self.sound.toggle_music()
+                
+                # N: Toggle sons de efeito
+                elif event.key == K_n:
+                    self.sound.toggle_sfx()
+                
                 # ENTER: Controle de fluxo
                 elif event.key == K_RETURN:
+                    self.sound.play('menu_select')
                     if self.game_state.is_menu():
                         # Inicia jogo
                         self.level.load_level(0)
                         self.player.set_position(*self.level.spawn_position)
                         self.player.reset_camera()
                         self.game_state.set_playing()
+                        self.sound.play('level_start')
+                        self.sound.play_music(0)  # Música da fase 1
                         pygame.event.set_grab(True)
                         pygame.mouse.set_visible(False)
                         pygame.mouse.set_pos(
@@ -144,8 +182,12 @@ class Game:
                             self.player.set_position(*self.level.spawn_position)
                             self.player.reset_camera()
                             self.game_state.set_playing()
+                            self.sound.play('level_start')
+                            self.sound.play_music(next_index)  # Música da próxima fase
                         else:
                             self.game_state.set_menu()
+                            self.sound.stop_music()
+                            self.sound.play_music('menu', is_menu=True)  # Volta música do menu
                         
                         pygame.event.set_grab(True)
                         pygame.mouse.set_visible(False)
@@ -156,6 +198,8 @@ class Game:
                     elif self.game_state.is_final_victory():
                         # Volta ao menu
                         self.game_state.set_menu()
+                        self.sound.stop_music()
+                        self.sound.play_music('menu', is_menu=True)  # Volta música do menu
                         pygame.event.set_grab(False)
                         pygame.mouse.set_visible(True)
             
@@ -179,6 +223,10 @@ class Game:
         self.player.update_camera_rotation(dx, dy)
         pygame.mouse.set_pos((self.window_width // 2, self.window_height // 2))
         
+        # Atualiza nuvens
+        if self.level.clouds:
+            self.level.clouds.update(dt)
+        
         # Input de movimento
         keys = pygame.key.get_pressed()
         
@@ -199,7 +247,7 @@ class Game:
         self.player.move(
             input_forward, input_strafe, dt,
             self.level.walls, self.level.boxes,
-            is_running
+            is_running, current_time
         )
         
         # Empurrar caixa
@@ -215,6 +263,7 @@ class Game:
                     
                     # Verifica vitória
                     if self.level.check_victory():
+                        self.sound.play('victory')
                         if self.level.is_last_level():
                             self.game_state.set_final_victory()
                         else:
@@ -229,10 +278,10 @@ class Game:
     def render(self, current_time):
         """Renderiza frame atual"""
         if self.game_state.is_menu():
-            Renderer.render_menu()
+            Renderer.render_menu(self.sound)
         
         elif self.game_state.is_playing():
-            Renderer.render_game_scene(self.level, self.player, current_time)
+            Renderer.render_game_scene(self.level, self.player, current_time, self.sound)
         
         elif self.game_state.is_victory():
             Renderer.render_victory(self.level, self.player, current_time)
@@ -281,6 +330,8 @@ def main():
     print("  Mouse     - Olhar")
     print("  ESPAÇO    - Empurrar caixa")
     print("  R         - Reiniciar nível")
+    print("  M         - Música ON/OFF")
+    print("  N         - Sons ON/OFF")
     print("  ENTER     - Avançar/Iniciar")
     print("  ESC       - Sair")
     print("=" * 60)

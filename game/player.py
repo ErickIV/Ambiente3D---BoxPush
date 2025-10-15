@@ -2,11 +2,35 @@
 game/player.py
 ==============
 Gerenciamento do jogador, câmera e controles.
+
+CÂMERA PRIMEIRA PESSOA:
+----------------------
+- Pitch (rotação vertical): Limitado a ±89° para evitar gimbal lock
+- Yaw (rotação horizontal): Livre 360°
+- Sensibilidade configurável via config.py
+
+SISTEMA DE MOVIMENTO:
+--------------------
+1. Captura input WASD + direção da câmera
+2. Calcula vetores forward e right baseados no yaw
+3. Normaliza movimento diagonal
+4. Aplica velocidade (normal ou corrida)
+5. Física suave através de Physics.smooth_move()
+6. Sistema de sons de passos com intervalo temporal
+
+CARACTERÍSTICAS:
+---------------
+- Movimento relativo à direção da câmera
+- Suporte a corrida (multiplicador de velocidade)
+- Detecção de colisões com paredes e caixas
+- Sons de passos adaptativos (mais rápidos ao correr)
+- Teleporte de emergência para spawn
 """
 
 import math
 from config import *
 from .physics import Physics
+from utils.sound import get_sound_manager
 
 
 class Player:
@@ -24,6 +48,10 @@ class Player:
         
         # Estado
         self.is_running = False
+        
+        # Controle de som de passos
+        self.last_step_time = 0.0
+        self.step_interval = 0.35  # Intervalo entre sons de passo (segundos)
     
     def set_position(self, x, y, z):
         """
@@ -87,7 +115,7 @@ class Player:
         """
         return Physics.get_cardinal_direction(self.camera_yaw)
     
-    def move(self, input_forward, input_strafe, dt, walls, boxes, run=False):
+    def move(self, input_forward, input_strafe, dt, walls, boxes, run=False, current_time=0.0):
         """
         Move o jogador baseado em input.
         
@@ -98,6 +126,7 @@ class Player:
             walls: Lista de paredes
             boxes: Lista de caixas
             run: Se está correndo
+            current_time: Tempo atual para som de passos
             
         Returns:
             bool: True se moveu
@@ -121,6 +150,9 @@ class Player:
         speed = MOVE_SPEED
         if run:
             speed *= RUN_MULTIPLIER
+            step_multiplier = 0.7  # Passos mais rápidos ao correr
+        else:
+            step_multiplier = 1.0
         
         move_x *= speed
         move_z *= speed
@@ -134,6 +166,11 @@ class Player:
         
         self.x = new_x
         self.z = new_z
+        
+        # Som de passos se moveu
+        if moved and current_time - self.last_step_time >= self.step_interval * step_multiplier:
+            get_sound_manager().play('step')
+            self.last_step_time = current_time
         
         return moved
     

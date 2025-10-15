@@ -2,7 +2,37 @@
 graphics/renderer.py
 ====================
 Sistema central de renderização do jogo.
-Gerencia toda a pipeline de renderização 3D.
+Gerencia toda a pipeline de renderização 3D usando OpenGL.
+
+PIPELINE DE RENDERIZAÇÃO:
+-------------------------
+1. Configuração de Perspectiva (gluPerspective)
+2. Setup de Câmera em Primeira Pessoa
+3. Sistema de Iluminação (luz direcional + ambient)
+4. Renderização de Geometria 3D:
+   - Chão com grid
+   - Paredes (cubos texturizados)
+   - Caixas (com cores dinâmicas baseadas no estado)
+   - Objetivos (marcadores X no chão)
+   - Sombras (projeção simples)
+5. Efeitos de Partículas (sistema de feedback visual)
+6. HUD 2D (overlay em ortho2D)
+
+TÉCNICAS GRÁFICAS:
+-----------------
+- Depth Testing (Z-buffer)
+- Back-face Culling
+- Smooth Shading (Gouraud)
+- Blending para transparências
+- Materiais com propriedades especular/diffuse/ambient
+- Sistema de cores procedurais para feedback visual
+
+ESTADOS VISUAIS DAS CAIXAS:
+--------------------------
+- normal: Marrom (caixa comum)
+- on_target: Dourado (no objetivo correto)
+- pushable: Verde (pode ser empurrada)
+- blocked: Vermelho (bloqueada)
 """
 
 import math
@@ -12,6 +42,7 @@ from config import *
 from .materials import Materials, Lighting
 from .primitives import Primitives
 from .ui import UI
+from .clouds import CloudSystem
 
 
 class Renderer:
@@ -201,7 +232,7 @@ class Renderer:
         glEnable(GL_LIGHTING)
     
     @staticmethod
-    def render_game_scene(level, player, current_time):
+    def render_game_scene(level, player, current_time, sound_manager=None):
         """
         Renderiza cena principal do jogo.
         
@@ -209,11 +240,16 @@ class Renderer:
             level: Objeto Level
             player: Objeto Player
             current_time: Tempo atual
+            sound_manager: Gerenciador de som
         """
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
         
         # Configura câmera
         Renderer.setup_camera(player)
+        
+        # Desenha nuvens (no fundo, antes de tudo)
+        if hasattr(level, 'clouds') and level.clouds:
+            level.clouds.render((player.x, player.y, player.z))
         
         # Desenha chão
         Primitives.draw_floor()
@@ -237,7 +273,7 @@ class Renderer:
         
         # Desenha HUD
         stats = level.get_progress_stats()
-        UI.draw_hud(level.current_level_index, stats)
+        UI.draw_hud(level.current_level_index, stats, sound_manager)
         UI.draw_crosshair()
     
     @staticmethod
@@ -290,10 +326,15 @@ class Renderer:
         Primitives.draw_target_marker(-1, 0, 0)
     
     @staticmethod
-    def render_menu():
-        """Renderiza menu principal completo"""
+    def render_menu(sound_manager=None):
+        """
+        Renderiza menu principal completo
+        
+        Args:
+            sound_manager: Gerenciador de som
+        """
         Renderer.render_menu_background()
-        UI.draw_menu()
+        UI.draw_menu(sound_manager)
     
     @staticmethod
     def render_victory(level, player, current_time):

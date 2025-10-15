@@ -107,13 +107,14 @@ class UI:
         glMatrixMode(GL_MODELVIEW)
     
     @staticmethod
-    def draw_hud(level_index, stats):
+    def draw_hud(level_index, stats, sound_manager=None):
         """
         Desenha HUD principal do jogo.
         
         Args:
             level_index: Índice do nível atual
             stats: Dict com estatísticas (boxes_on_target, total_boxes, move_count)
+            sound_manager: Gerenciador de som para mostrar status
         """
         y = WINDOW_HEIGHT - 36
         
@@ -131,6 +132,20 @@ class UI:
         # Movimentos
         y -= 32
         UI.draw_text(20, y, f"Movimentos: {stats['move_count']}", 18)
+        
+        # Status de áudio (canto superior direito)
+        if sound_manager:
+            audio_y = WINDOW_HEIGHT - 36
+            audio_x = WINDOW_WIDTH - 150
+            
+            # Status da música
+            music_status = "🎵 ON" if sound_manager.music_enabled else "🔇 OFF"
+            UI.draw_text(audio_x, audio_y, f"M: {music_status}", 16)
+            
+            # Status dos sons
+            audio_y -= 28
+            sfx_status = "🔊 ON" if sound_manager.sfx_enabled else "🔇 OFF"
+            UI.draw_text(audio_x, audio_y, f"N: {sfx_status}", 16)
         
         # Dicas
         y -= 32
@@ -261,8 +276,13 @@ class UI:
         glEnable(GL_LIGHTING)
     
     @staticmethod
-    def draw_menu():
-        """Desenha menu principal"""
+    def draw_menu(sound_manager=None):
+        """
+        Desenha menu principal
+        
+        Args:
+            sound_manager: Gerenciador de som para mostrar status
+        """
         cx = WINDOW_WIDTH // 2
         cy = WINDOW_HEIGHT // 2
         
@@ -283,24 +303,37 @@ class UI:
         glColor4f(0.0, 0.0, 0.0, 0.6)
         
         glBegin(GL_QUADS)
-        glVertex2f(0, cy + 150)
-        glVertex2f(WINDOW_WIDTH, cy + 150)
-        glVertex2f(WINDOW_WIDTH, cy - 100)
-        glVertex2f(0, cy - 100)
+        glVertex2f(0, cy + 180)
+        glVertex2f(WINDOW_WIDTH, cy + 180)
+        glVertex2f(WINDOW_WIDTH, cy - 150)
+        glVertex2f(0, cy - 150)
         glEnd()
         
         glDisable(GL_BLEND)
         
         # Textos do menu
-        UI.draw_text(cx - 160, cy + 80, "🎮 BOXPUSH 3D SOKOBAN 🎮", 24)
-        UI.draw_text(cx - 120, cy + 40, 
+        UI.draw_text(cx - 160, cy + 120, "🎮 BOXPUSH 3D SOKOBAN 🎮", 24)
+        UI.draw_text(cx - 120, cy + 80, 
             "Empurre as caixas para os objetivos!", 18)
-        UI.draw_text(cx - 80, cy + 10, "🎯 5 NÍVEIS DESAFIADORES 🎯", 16)
-        UI.draw_text(cx - 100, cy - 20, "⏎ ENTER - Começar Jogo", 18)
-        UI.draw_text(cx - 60, cy - 50, "⎋ ESC - Sair", 18)
-        UI.draw_text(cx - 160, cy - 90, 
+        UI.draw_text(cx - 80, cy + 50, "🎯 5 NÍVEIS DESAFIADORES 🎯", 16)
+        
+        UI.draw_text(cx - 100, cy + 10, "⏎ ENTER - Começar Jogo", 18)
+        UI.draw_text(cx - 60, cy - 20, "⎋ ESC - Sair", 18)
+        
+        UI.draw_text(cx - 180, cy - 60, 
             "Controles: WASD=Mover | SHIFT=Correr | Mouse=Olhar | Espaço=Empurrar", 
-            16)
+            14)
+        UI.draw_text(cx - 120, cy - 85, 
+            "M=Música ON/OFF | N=Sons ON/OFF | R=Reiniciar", 
+            14)
+        
+        # Status de áudio
+        if sound_manager:
+            audio_y = cy - 120
+            music_status = "🎵 ON" if sound_manager.music_enabled else "🔇 OFF"
+            sfx_status = "🔊 ON" if sound_manager.sfx_enabled else "🔇 OFF"
+            UI.draw_text(cx - 100, audio_y, 
+                f"Música: {music_status} | Sons: {sfx_status}", 16)
         
         glEnable(GL_DEPTH_TEST)
         glEnable(GL_LIGHTING)

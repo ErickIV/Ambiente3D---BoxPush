@@ -1,8 +1,32 @@
 """
 game/physics.py
 ===============
-Sistema de física e detecção de colisões.
-Implementa AABB (Axis-Aligned Bounding Box) para colisões eficientes.
+Sistema de física e detecção de colisões do jogo.
+
+SISTEMA DE GRID:
+---------------
+- Mundo discreto para lógica (inteiros)
+- Movimentação suave (floats) com conversão
+- Grid de 1x1 unidade por célula
+
+DETECÇÃO DE COLISÕES:
+--------------------
+1. AABB (Axis-Aligned Bounding Box) simplificado
+2. Colisão circular jogador-obstáculos
+3. Sliding collision (deslizar ao tocar paredes)
+4. Verificação de múltiplos obstáculos
+
+DIREÇÕES CARDINAIS:
+------------------
+Converte ângulo da câmera (yaw) em direções discretas:
+- Norte (0°), Sul (180°), Leste (90°), Oeste (270°)
+- Usado para empurrar caixas em direções precisas
+
+FÍSICA DE MOVIMENTO:
+-------------------
+- Movimento suave com interpolação
+- Resposta a colisões sem travamento
+- Raio de colisão do jogador configurável
 """
 
 import math
