@@ -1,0 +1,38 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+dist/
+build/
+*.egg
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Logs
+*.log
+
+# Backups
+*.bak
+*.backup
+*_BACKUP.py
+*_OLD.py
+
+# Temporary files
+*.tmp
+*.temp
+
+# PyOpenGL
+*.pyc
